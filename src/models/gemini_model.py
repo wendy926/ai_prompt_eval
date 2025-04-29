@@ -24,7 +24,7 @@ class GeminiDialogueAnalyzer:
 
         Args:
             api_key (str): Google API 密钥。
-            model_name (str): 要使用的 Gemini 模型名称 (例如 'gemini-1.5-pro-latest')。
+            model_name (str): 要使用的 Gemini 模型名称 (例如 'gemini-2.5-pro-latest')。
             system_prompt (str): 用于指导模型的系统提示。
             temperature (float): 控制生成文本的随机性。
             max_output_tokens (int): 生成响应的最大 token 数。
