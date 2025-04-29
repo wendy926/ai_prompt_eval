@@ -1,0 +1,13 @@
+## 项目结构
+ai_prompt_eval/
+ ├── .env
+ ├── requirements.txt
+ ├── src/
+ │   ├── __init__.py
+ │   ├── main.py
+ │   ├── models/
+ │   │   ├── __init__.py
+ │   │   └── gemini_model.py
+ │   └── prompts/
+ │       ├── system_prompt.txt
+ │       └── user_prompt.txt
