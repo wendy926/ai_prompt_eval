@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # Distribution / packaging
 .Python
@@ -45,3 +46,4 @@ venv.bak/
 # Other
 *.log
 local_settings.py
+output.txt
