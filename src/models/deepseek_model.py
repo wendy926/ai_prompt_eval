@@ -84,8 +84,6 @@ class DeepSeekDialogueAnalyzer:
                 messages=messages,
                 temperature=self.temperature,
                 max_tokens=self.max_output_tokens
-                # 移除 response_format 参数
-                # response_format={"type": "json_object"}
             )
 
             # 检查响应是否有效以及是否包含 choices
@@ -93,7 +91,6 @@ class DeepSeekDialogueAnalyzer:
                 # 获取模型响应内容
                 model_response_content = response.choices[0].message.content
                 logging.info("Received response from DeepSeek.")
-                # logging.debug(f"Raw DeepSeek response content: {model_response_content}") # Debugging
 
                 # --- 修改：更稳健地处理可能的非 JSON 输出 ---
                 # 尝试找到 JSON 代码块（如果模型用 markdown 包裹了）

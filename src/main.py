@@ -63,9 +63,6 @@ def analyze_and_write_batch(
             is_llm_error = True
             logging.error(f"LLM analysis error for batch {batch_num}: {result[0].get('error', 'Unknown LLM error')}")
             # 可以选择记录 raw_response
-            # raw_resp = result[0].get('raw_response')
-            # if raw_resp:
-            #     logging.error(f"Raw response causing error: {raw_resp}")
         elif not isinstance(result, (list, dict)): # 如果返回的不是列表也不是字典
              is_llm_error = True
              logging.error(f"LLM returned an unexpected data type for batch {batch_num}: {type(result)}")
@@ -96,7 +93,6 @@ def analyze_and_write_batch(
                         except (ValueError, TypeError) as e:
                             logging.warning(f"Batch {batch_num}: Could not convert field '{field}' value '{original_value}' to int. Keeping original. Error: {e}")
                             # 保留原始值或设置为 None/0，取决于你的需求
-                            # processed_record[field] = None # 或者保持原样
 
                 processed_records_for_feishu.append(processed_record)
             # --- 结束数据类型转换 ---
@@ -197,10 +193,9 @@ def main():
         feishu_read_app_token = os.getenv("FEISHU_READ_APP_TOKEN")
         feishu_read_table_id = os.getenv("FEISHU_READ_TABLE_ID")
         feishu_read_view_id = os.getenv("FEISHU_READ_VIEW_ID")
-        # feishu_read_fields_str = os.getenv("FEISHU_READ_FIELDS") # <--- 移除读取字段配置
-        # feishu_read_fields = [field.strip() for field in feishu_read_fields_str.split(',')] if feishu_read_fields_str else None # <--- 移除字段列表处理
+        # <--- 移除读取字段配置
 
-        # --- 获取飞书写入配置 (假设写入同一个表格) ---
+        # --- 获取飞书书写写入配置 (假设写入同一个表格) ---
         feishu_write_app_token = feishu_read_app_token # 使用与读取相同的 App Token
         feishu_write_table_id = feishu_read_table_id   # 使用与读取相同的 Table ID
 
@@ -225,8 +220,14 @@ def main():
 
         if model_provider == "gemini":
             logging.info("Initializing GeminiDialogueAnalyzer...")
-            analyzer = GeminiDialogueAnalyzer(api_key=google_api_key, model_name=model_name, system_prompt=system_prompt,
-                                            temperature=temperature, max_output_tokens=max_output_tokens)
+            # --- 确保传递所有必需的参数 ---
+            analyzer = GeminiDialogueAnalyzer(
+                api_key=google_api_key,
+                model_name=model_name, # 确保 model_name 已从 env 加载
+                system_prompt=system_prompt,
+                temperature=temperature, # 确保 temperature 已从 env 加载
+                max_output_tokens=max_output_tokens # 确保 max_output_tokens 已从 env 加载
+            )
         elif model_provider == "deepseek":
             logging.info("Initializing DeepSeekDialogueAnalyzer...")
             analyzer = DeepSeekDialogueAnalyzer(api_key=deepseek_api_key, base_url=deepseek_base_url,
@@ -243,12 +244,10 @@ def main():
                 app_token=feishu_read_app_token,
                 table_id=feishu_read_table_id,
                 view_id=feishu_read_view_id
-                # fields=feishu_read_fields # <--- 移除此参数传递
             )
 
             if not records:
                 logging.warning("No records fetched from Feishu Bitable.")
-                # print(json.dumps({"error": "No records fetched from Feishu Bitable."}, ensure_ascii=False, indent=2)) # 不再打印 JSON
                 return # 没有数据则退出
 
             logging.info(f"Successfully fetched {len(records)} records from Feishu.")
@@ -263,10 +262,7 @@ def main():
             batch_size = 2 # 可以调整批处理大小
             num_batches = math.ceil(len(records) / batch_size)
 
-            # 移除输出目录创建
-            # output_directory = Path("./output_csvs")
-            # output_directory.mkdir(parents=True, exist_ok=True)
-            # logging.info(f"CSV output directory: {output_directory.resolve()}")
+           
 
             logging.info(f"Starting parallel dialogue analysis for {num_batches} batches of size {batch_size}...")
 
@@ -307,8 +303,7 @@ def main():
             # --- 结束并行处理修改 ---
 
             logging.info(f"All batches processed. Successful batches: {successful_batches}, Failed batches: {failed_batches}.")
-            # 不再打印汇总 JSON
-            # print(json.dumps(all_results, ensure_ascii=False, indent=2))
+            
 
             logging.info("Program finished successfully.")
         else:

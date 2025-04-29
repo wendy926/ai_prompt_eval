@@ -6,11 +6,6 @@ from typing import List, Optional, Dict, Any
 # 导入 lark-oapi 相关模块
 import lark_oapi as lark
 from lark_oapi import LogLevel # 导入日志级别
-# --- 移除所有 ApiException 导入尝试 ---
-# from lark_oapi.core.exception import ApiException
-# from lark_oapi.exception import ApiException
-# from lark_oapi import ApiException
-# --- 结束移除 ---
 # 更新导入，使用 AppTableRecord 相关的类 (读取)
 from lark_oapi.api.bitable.v1 import ListAppTableRecordRequest, ListAppTableRecordResponse
 # 新增导入：用于获取 tenant_access_token
@@ -38,7 +33,7 @@ def get_tenant_access_token(app_id: str, app_secret: str) -> Optional[str]:
     client = lark.Client.builder() \
         .app_id(app_id) \
         .app_secret(app_secret) \
-        .log_level(LogLevel.WARNING).build() # 可以调整为 LogLevel.DEBUG 获取更详细的 SDK 日志
+        .log_level(LogLevel.WARNING).build()
 
     # 构造请求对象
     request_body = InternalTenantAccessTokenRequestBody.builder() \
@@ -74,9 +69,6 @@ def get_tenant_access_token(app_id: str, app_secret: str) -> Optional[str]:
             logging.error(
                 f"Failed to get tenant_access_token, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}")
             # --- 新增：打印请求信息 ---
-            # 获取基础 URL (通常在 client.options 或 client._options 中，但非公开 API，谨慎使用)
-            # base_url = getattr(client, '_options', {}).get('base_uri', 'UNKNOWN_BASE_URL') # 示例，可能不准确
-            # 或者直接硬编码已知的端点路径
             endpoint_path = "/open-apis/auth/v3/tenant_access_token/internal"
             logging.error(f"Request Endpoint Path: {endpoint_path}")
             try:
@@ -144,8 +136,6 @@ def get_tenant_access_token(app_id: str, app_secret: str) -> Optional[str]:
         # --- 结束新增 ---
         return None
 
-# --- 使用 Bearer Token 的方式 (保持不变，但会被优先动态获取的 Token 调用) ---
-# --- 使用 Bearer Token 的方式 ---
 # --- 修改：移除 fields 参数，固定请求字段 ---
 def fetch_bitable_records_with_token(
     app_token: str,
@@ -178,9 +168,6 @@ def fetch_bitable_records_with_token(
                 .user_id_type("open_id") \
                 .field_names('["编号", "round5", "round10"]') # <--- 固定请求这三个字段
 
-            # if fields: # <--- 移除条件判断
-            #     # 字段名应为逗号分隔的字符串
-            #     request_builder = request_builder.field_names(",".join(fields))
             if page_token:
                 request_builder = request_builder.page_token(page_token)
 
@@ -188,12 +175,8 @@ def fetch_bitable_records_with_token(
 
             # 3. 发起请求 (使用 client.bitable.v1.app_table_record.list)
             logging.info(f"Fetching data from Feishu Bitable (SDK/Token/AppTable): App={app_token}, Table={table_id}, View={view_id}, PageToken={page_token}")
-            # 注意：这里需要传递获取到的 bearer_token
-            # --- 修改：认证方式应为 tenant_access_token 或 user_access_token，取决于 token 类型 ---
             # 假设 bearer_token 是 tenant_access_token
             option = lark.RequestOption.builder().tenant_access_token(bearer_token).build()
-            # 如果 bearer_token 是 user_access_token，则使用下面这行
-            # option = lark.RequestOption.builder().user_access_token(bearer_token).build()
             response: ListAppTableRecordResponse = client.bitable.v1.app_table_record.list(request, option)
 
             # 4. 处理响应
@@ -233,13 +216,6 @@ def fetch_bitable_records_with_token(
         result_list.append(record_dict)
 
     return result_list
-
-
-# --- 使用 App ID 和 App Secret 的方式 (此函数现在不再直接调用，Token 获取逻辑已移出) ---
-# def fetch_bitable_records_with_appid(...) -> List[dict]:
-#     # 这个函数可以被移除或注释掉，因为获取 Token 的逻辑已经分离
-#     pass
-
 
 # --- 写入记录到飞书多维表格的函数 ---
 def write_records_to_bitable(
@@ -322,17 +298,12 @@ def write_records_to_bitable(
         # 可以检查 response.data.records 来确认写入的记录详情
         return True
 
-    # except lark.exception.ApiException as e: # <--- 移除此特定异常捕获
-    #     logging.error(f"Lark SDK API Exception during Feishu write: code={e.code}, msg={e.msg}, log_id={e.log_id}")
-    #     return False
     except Exception as e:
         logging.error(f"An unexpected error occurred during Feishu write: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-
-# --- 主调用函数，更新逻辑以优先动态获取 Token ---
 # --- 修改：移除 fields 参数 ---
 def fetch_bitable_records(
     app_token: str,
